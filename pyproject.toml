@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "valheimworldcheatflagcleaner"
+version = "1.0.0"
+description = "Ferramentas para inspecionar flags de cheat em saves de personagem e reparar marcadores no mundo Valheim."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+valheim-cheat-flag-cleaner = "valheim_cheat_flag_cleaner.valheim_cheat_cleaner:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
