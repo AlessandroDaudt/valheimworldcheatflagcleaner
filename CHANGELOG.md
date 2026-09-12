@@ -2,8 +2,9 @@
 
 ## 1.0.0 - 2026-09-12
 
-- Organização do projeto em pacote Python instalável.
-- Scanner e limpador de flags em saves `.fch`.
-- Plugin BepInEx para limpeza de flags em `ZDOs`, inventários persistentes e payloads de mapa/suportes.
-- Verificação pós-save com os relatórios `AUTO-WORLD` e `AUTO-WORLD-VERIFY`.
-- Runbook de backup, parada, limpeza, validação e rollback.
+- Organized the project as an installable Python package.
+- Added a scanner and cleaner for .fch character saves.
+- Added a BepInEx plugin for flags in ZDOs, persistent inventories, and map/stand item payloads.
+- Added post-save verification through AUTO-WORLD and AUTO-WORLD-VERIFY reports.
+- Added an operations runbook covering backup, stop, cleanup, validation, and rollback.
+- Replaced installation-specific documentation values with generic placeholders.

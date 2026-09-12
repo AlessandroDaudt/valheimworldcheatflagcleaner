@@ -46,20 +46,20 @@ class CheatCleanerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)
             archive = folder / "world.tar.gz"
-            world = folder / "PowerGuido"
+            world = folder / "ExampleWorld"
             world.mkdir()
             (world / "_main.1.db2").write_bytes(b"db")
             (world / "_main.1.fwl2").write_bytes(b"fwl")
             (world / "0_0.chunk").write_bytes(b"chunk")
             with tarfile.open(archive, "w:gz") as handle:
-                handle.add(world, arcname="PowerGuido")
+                handle.add(world, arcname="ExampleWorld")
 
             info = inspect_world_backup(archive)
 
             self.assertFalse(info.error)
             self.assertEqual(info.chunks, 1)
-            self.assertIn("PowerGuido/_main.1.db2", info.metadata_files)
-            self.assertTrue((folder / "PowerGuido" / "_main.1.db2").exists())
+            self.assertIn("ExampleWorld/_main.1.db2", info.metadata_files)
+            self.assertTrue((folder / "ExampleWorld" / "_main.1.db2").exists())
 
 
 if __name__ == "__main__":

@@ -1,28 +1,28 @@
-# Arquitetura
+# Architecture
 
-## Aplicativo de personagem
+## Character application
 
-src/valheim_cheat_flag_cleaner/save_format.py implementa a leitura e escrita do formato binário de personagem .fch, incluindo a verificação de integridade. valheim_cheat_cleaner.py usa esse parser para:
+src/valheim_cheat_flag_cleaner/save_format.py implements reading and writing of the Valheim .fch character format, including integrity verification. valheim_cheat_cleaner.py uses the parser to:
 
-- localizar itens marcados;
-- produzir um relatório legível ou CSV/JSON;
-- criar uma cópia limpa sem sobrescrever a origem;
-- inspecionar um arquivo tar do mundo apenas para inventário e metadados disponíveis.
+- locate marked items;
+- produce human-readable, CSV, or JSON reports;
+- create a cleaned copy without overwriting the source;
+- inspect a world archive for available inventory and metadata without modifying it.
 
-## Reparação do mundo
+## World repair
 
-O plugin BepInEx opera no processo do servidor depois de ZNet e ZDOMan estarem prontos. A sequência é:
+The BepInEx plugin runs inside the server process after ZNet and ZDOMan are ready. Its sequence is:
 
-1. enumerar todos os ZDOs carregados;
-2. remover s_cheated e flags pendentes do objeto;
-3. interpretar payloads de inventário persistente e estruturas que armazenam itens;
-4. remover a marcação do item sem excluir o item nem alterar stack/quantidade;
-5. marcar setores e portais como alterados;
-6. salvar o mundo;
-7. executar uma verificação e registrar contagens em AUTO-WORLD-VERIFY.
+1. enumerate all loaded ZDOs;
+2. remove s_cheated and queued flags from the object;
+3. parse persistent inventory payloads and item-bearing structures;
+4. remove the item marker without deleting the item or changing its stack/quantity;
+5. mark sectors and portals dirty;
+6. save the world;
+7. run a verification pass and write counts to AUTO-WORLD-VERIFY.
 
-O save/verify serve para detectar o caso em que uma limpeza apenas em memória parece funcionar, mas não foi persistida no arquivo do mundo.
+The save/verify sequence detects cases where an in-memory cleanup appears successful but was not persisted to the world files.
 
-## Reprodutibilidade
+## Reproducibility
 
-O patcher usa Mono.Cecil para ligar as chamadas às assinaturas da versão local de assembly_valheim.dll. Por isso, o DLL original do jogo deve ser da mesma versão do servidor. O arquivo oficial não é distribuído neste repositório; é uma entrada local em vendor/.
+The patcher uses Mono.Cecil to bind calls to the signatures in the local assembly_valheim.dll. The official game assembly must therefore match the server version. It is not distributed in this repository; it is a local input under vendor/.

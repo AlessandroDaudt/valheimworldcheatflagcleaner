@@ -393,7 +393,7 @@ class CleanerApp(tk.Tk):
 
     def choose_world_backup(self) -> None:
         selected = filedialog.askopenfilename(
-            title="Backup do mundo PowerGuido",
+            title="World backup",
             filetypes=[("World backup", "*.tar.gz"), ("All files", "*.*")],
         )
         if not selected:

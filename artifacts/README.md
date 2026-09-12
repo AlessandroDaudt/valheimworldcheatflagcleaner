@@ -1,8 +1,8 @@
-# Artefatos prontos
+# Ready-to-use artifacts
 
-Os DLLs desta pasta são os artefatos operacionais que podem ser copiados para um servidor BepInEx:
+The DLLs in this directory are operational artifacts that can be copied to a BepInEx server:
 
-- `server-repair/CheatCleanup/CheatCleanup.dll`: plugin de limpeza do mundo.
-- `server-repair/Jotunn/Jotunn.dll`: dependência usada pelo plugin.
+- server-repair/CheatCleanup/CheatCleanup.dll: world cleanup plugin.
+- server-repair/Jotunn/Jotunn.dll: dependency used by the plugin.
 
-Antes de instalar, compare os hashes com os valores publicados no release ou com o build local. Não copie DLLs enquanto o mundo estiver em uso. O código de patch e as instruções de recompilação estão em `scripts/patch_cheatcleanup_server.ps1` e no README. As dependências oficiais do jogo não são distribuídas aqui.
+Before installation, compare the hashes with the release or with a local build. Do not copy DLLs while the world is in use. The patcher and rebuild instructions are in scripts/patch_cheatcleanup_server.ps1 and the repository README. Official game dependencies are not distributed here.

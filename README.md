@@ -1,115 +1,116 @@
 # Valheim World Cheat Flag Cleaner
 
-Ferramentas para localizar e remover marcações de item cheatado em saves de personagem e para reparar as marcações persistidas nos objetos (ZDOs) de um mundo Valheim dedicado.
+Tools for locating and removing cheat-item markers from character saves and for repairing markers persisted in Valheim dedicated-server world objects (ZDOs).
 
-O projeto tem dois componentes complementares:
+The project has two complementary components:
 
-1. valheim_cheat_flag_cleaner: aplicativo Python com interface gráfica e CLI para arquivos .fch de personagem. Ele cria cópias limpas e preserva o arquivo original.
-2. artifacts/server-repair/CheatCleanup/CheatCleanup.dll: plugin BepInEx para servidor dedicado. Após o carregamento do mundo, percorre os ZDOs, limpa s_cheated e flags pendentes, limpa payloads de inventários persistentes e verifica o resultado após o save.
+1. valheim_cheat_flag_cleaner: a Python desktop application and CLI for character .fch files. It creates cleaned copies and preserves the original file.
+2. artifacts/server-repair/CheatCleanup/CheatCleanup.dll: a BepInEx dedicated-server plugin. After the world has loaded, it scans ZDOs, clears s_cheated and queued flags, cleans persistent inventory payloads, and verifies the result after saving.
 
-O aplicativo de personagem não regrava chunks do mundo. Para baús, suportes, carrinhos, estruturas e demais objetos persistidos no mundo, use o plugin do servidor.
+The character application does not rewrite world chunks. For chests, stands, carts, structures, and other objects persisted in the world, use the server plugin.
 
-## Segurança e escopo
+## Security and scope
 
-- Faça um backup antes de cada execução.
-- Pare o servidor antes de substituir DLLs ou manipular arquivos do mundo.
-- Nunca coloque senha, token, IP privado, cópia do mundo ou arquivos .fch no Git.
-- Os binários oficiais do jogo e as dependências locais de build ficam em vendor/, que é ignorado pelo Git.
-- O plugin foi projetado para limpar apenas flags de cheat; ele não deve remover itens nem alterar quantidades.
-- Mantenha o backup até confirmar que o mundo abre corretamente e que o relatório de verificação mostra zero flags.
+- Make a backup before every run.
+- Stop the server before replacing DLLs or manipulating world files.
+- Never commit passwords, tokens, private IP addresses, world copies, or .fch files.
+- Official game binaries and local build dependencies belong in vendor/, which is ignored by Git.
+- The plugin is intended to clear cheat flags only; it should not remove items or change quantities.
+- Keep the backup until the world opens correctly and the verification report shows zero flags.
+- Replace every example placeholder with the values for your own installation. Do not publish those values in this repository.
 
-## Uso local
+## Local use
 
-Requer Python 3.11 ou mais recente. Não há dependências de runtime além da biblioteca padrão.
+Requires Python 3.11 or newer. Runtime dependencies are limited to the Python standard library.
 
-Uso no PowerShell:
+PowerShell setup:
 
     py -3 -m venv .venv
     .\.venv\Scripts\Activate.ps1
     $env:PYTHONPATH = "$PWD\src"
     python -m unittest discover -s tests -v
 
-Para abrir a interface gráfica no Windows:
+To open the Windows desktop application:
 
     scripts\run_cheat_cleaner.cmd
 
-Exemplos de CLI:
+CLI examples:
 
     $env:PYTHONPATH = "$PWD\src"
-    python -m valheim_cheat_flag_cleaner.valheim_cheat_cleaner scan "C:\caminho\characters_local"
-    python -m valheim_cheat_flag_cleaner.valheim_cheat_cleaner clean "C:\caminho\characters_local" --clear-profile-flag
-    python -m valheim_cheat_flag_cleaner.valheim_cheat_cleaner world-info "C:\backup\PowerGuido.tar.gz"
+    python -m valheim_cheat_flag_cleaner.valheim_cheat_cleaner scan "C:\path\character saves"
+    python -m valheim_cheat_flag_cleaner.valheim_cheat_cleaner clean "C:\path\character saves" --clear-profile-flag
+    python -m valheim_cheat_flag_cleaner.valheim_cheat_cleaner world-info "C:\path\world name\world-backup.tar.gz"
 
-O comando clean grava cópias com sufixo de segurança; confira a saída antes de substituir qualquer save original.
+The clean command writes copies with a safety suffix. Review the output before replacing any original save.
 
-## Operação em servidor Docker
+## Docker server operation
 
-Os caminhos abaixo são exemplos. Ajuste o nome do container, o caminho do volume e o nome do mundo para a instalação de cada servidor. O runbook completo está em docs/OPERATIONS.md.
+The paths and names below are placeholders. Replace them with values from your own installation. The complete runbook is in docs/OPERATIONS.md.
 
-### 1. Confirmar o container e fazer backup
+### 1. Check the container and create a backup
 
-    docker inspect --format '{{.State.Status}} {{.State.Running}}' valheim-server
-    docker exec valheim-server sh -c 'mkdir -p /config/backups && tar -czf /config/backups/PowerGuido-before-clean-YYYYMMDD-HHMMSSUTC.tar.gz -C /config/worlds_local PowerGuido'
-    docker exec valheim-server sha256sum /config/backups/PowerGuido-before-clean-YYYYMMDD-HHMMSSUTC.tar.gz
+    docker inspect --format '{{.State.Status}} {{.State.Running}}' <container-name>
+    docker exec <container-name> sh -c 'mkdir -p /config/backups && tar -czf /config/backups/<world-name>-before-clean-<timestamp>.tar.gz -C /config/worlds_local <world-name>'
+    docker exec <container-name> sha256sum /config/backups/<world-name>-before-clean-<timestamp>.tar.gz
 
-Copie o arquivo para um local seguro fora do repositório e registre o SHA-256.
+Copy the archive to safe storage outside the repository and record its SHA-256 checksum.
 
-### 2. Instalar o plugin
+### 2. Install the plugin
 
-Com o container parado, copie estes artefatos para o diretório de plugins BepInEx:
+With the container stopped, copy these artifacts to the BepInEx plugin directory:
 
     artifacts/server-repair/CheatCleanup/CheatCleanup.dll
     artifacts/server-repair/Jotunn/Jotunn.dll
 
-Em Docker, uma forma de copiar é:
+For Docker, one way to copy them is:
 
-    docker cp artifacts/server-repair/CheatCleanup/CheatCleanup.dll valheim-server:/config/bepinex/plugins/CheatCleanup/CheatCleanup.dll
-    docker cp artifacts/server-repair/Jotunn/Jotunn.dll valheim-server:/config/bepinex/plugins/Jotunn/Jotunn.dll
+    docker cp artifacts/server-repair/CheatCleanup/CheatCleanup.dll <container-name>:/config/bepinex/plugins/CheatCleanup/CheatCleanup.dll
+    docker cp artifacts/server-repair/Jotunn/Jotunn.dll <container-name>:/config/bepinex/plugins/Jotunn/Jotunn.dll
 
-Não substitua DLLs com o mundo em uso. Se o servidor não usa Docker, copie os mesmos arquivos para o diretório BepInEx/plugins da instalação dedicada.
+Do not replace DLLs while the world is in use. For a non-Docker server, copy the same files to that installation's BepInEx/plugins directory.
 
-### 3. Parar, iniciar e validar
+### 3. Stop, start, and validate
 
-    docker stop --timeout 120 valheim-server
-    docker start valheim-server
-    docker inspect --format '{{.State.Status}} {{.State.Running}}' valheim-server
-    docker exec valheim-server tail -n 300 /opt/valheim/bepinex/BepInEx/LogOutput.log
+    docker stop --timeout 120 <container-name>
+    docker start <container-name>
+    docker inspect --format '{{.State.Status}} {{.State.Running}}' <container-name>
+    docker exec <container-name> tail -n 300 /opt/valheim/bepinex/BepInEx/LogOutput.log
 
-Aguarde o carregamento completo do mundo. Procure os relatórios AUTO-WORLD e AUTO-WORLD-VERIFY. O resultado esperado é:
+Wait for the world to finish loading. Look for the AUTO-WORLD and AUTO-WORLD-VERIFY reports. The expected result is:
 
     flags cheated=0, queued=0
     ... items ... 0 marked
 
-O segundo relatório é importante: ele confirma o estado depois que o mundo foi salvo e recarregado em memória. Se houver flags novamente, faça outro backup antes de qualquer nova tentativa e investigue a linha de diagnóstico do objeto.
+The second report confirms the state after the world has been saved and reloaded in memory. If flags appear again, make another backup before retrying and investigate the diagnostic object line.
 
-## Recompilar o plugin de servidor
+## Rebuilding the server plugin
 
-O DLL pronto é mantido no repositório para operação reproduzível. Para recompilar, obtenha de fontes legítimas:
+The ready-to-use DLL is kept in the repository for repeatable operations. To rebuild it, obtain from legitimate sources:
 
-- o CheatCleanup.dll original compatível com a versão do servidor;
-- Mono.Cecil.dll do BepInEx usado pelo servidor;
-- assembly_valheim.dll da mesma versão do jogo/servidor.
+- the original CheatCleanup.dll compatible with the server version;
+- Mono.Cecil.dll from the BepInEx installation used by the server;
+- assembly_valheim.dll from the same game/server version.
 
-Coloque esses arquivos localmente em:
+Place these files locally at:
 
     vendor/CheatCleanup/CheatCleanup.dll
     vendor/BepInEx/Mono.Cecil.dll
     vendor/assembly_valheim.dll
 
-Depois execute:
+Then run:
 
     pwsh -File .\scripts\patch_cheatcleanup_server.ps1
 
-Ou passe caminhos explícitos com -InputDll, -CecilDll e -ValheimDll. O resultado é gravado em artifacts/server-repair/CheatCleanup/CheatCleanup.dll. Os arquivos em vendor/ nunca devem ser commitados.
+Or pass explicit paths with -InputDll, -CecilDll, and -ValheimDll. The output is written to artifacts/server-repair/CheatCleanup/CheatCleanup.dll. Files in vendor/ must never be committed.
 
-## Estrutura
+## Repository layout
 
-    src/valheim_cheat_flag_cleaner/  parser e limpador de arquivos .fch
-    tests/                            testes de round-trip e limpeza
-    scripts/                          launcher Windows e patcher do plugin
-    artifacts/server-repair/          DLLs prontas para o servidor
-    docs/                             runbook operacional e arquitetura
+    src/valheim_cheat_flag_cleaner/  .fch parser and cleaner
+    tests/                            round-trip and cleaning tests
+    scripts/                          Windows launcher and plugin patcher
+    artifacts/server-repair/          ready-to-install server DLLs
+    docs/                             operations runbook and architecture notes
 
-## Licença
+## License
 
-MIT. Consulte LICENSE.
+MIT. See LICENSE.

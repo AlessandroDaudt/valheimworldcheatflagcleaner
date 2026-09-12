@@ -1,80 +1,82 @@
-# Runbook operacional
+# Operations runbook
 
-Este procedimento é deliberadamente conservador: backup, parada, alteração, inicialização e validação. Ele pode ser usado por outra pessoa sem conhecer o histórico deste projeto.
+This procedure is intentionally conservative: backup, stop, change, start, and validate. It is written so another operator can use it without access to any private server history.
 
-## Pré-requisitos
+## Prerequisites
 
-- acesso administrativo ao host do servidor;
-- acesso ao container ou à instalação BepInEx;
-- espaço livre para pelo menos duas cópias comprimidas do mundo;
-- uma cópia local deste repositório;
-- janela para reiniciar o servidor;
-- nenhuma senha ou token gravado em scripts, issues ou arquivos do projeto.
+- administrative access to the server host;
+- access to the container or BepInEx installation;
+- enough free space for at least two compressed world copies;
+- a local checkout of this repository;
+- a maintenance window for a server restart;
+- no password or token stored in scripts, issues, or project files.
 
-Substitua <container>, <mundo>, <volume> e <timestamp> pelos valores da instalação. Não execute comandos de escrita no mundo sem confirmar os caminhos.
+Replace <container-name>, <world-name>, <volume>, and <timestamp> with values from the target installation. Do not run write commands against a world until the paths have been confirmed.
 
-## 1. Identificar o estado atual
+Windows path examples should use generic placeholders such as C:\path\world name. Do not publish a real user profile, server name, world name, map name, IP address, or backup path.
 
-Docker:
+## 1. Identify the current state
 
-    docker inspect --format '{{.State.Status}} {{.State.Running}}' <container>
-    docker exec <container> sha256sum /config/bepinex/plugins/CheatCleanup/CheatCleanup.dll
+For Docker:
 
-Anote o hash do plugin e o estado. Se o container já estiver parado, não há necessidade de pará-lo novamente.
+    docker inspect --format '{{.State.Status}} {{.State.Running}}' <container-name>
+    docker exec <container-name> sha256sum /config/bepinex/plugins/CheatCleanup/CheatCleanup.dll
 
-## 2. Fazer e verificar o backup
+Record the plugin hash and service state. If the container is already stopped, do not stop it again.
 
-Para a imagem deste projeto, o mundo fica em /config/worlds_local/<mundo>:
+## 2. Create and verify the backup
 
-    docker exec <container> sh -c 'mkdir -p /config/backups && tar -czf /config/backups/<mundo>-before-clean-<timestamp>.tar.gz -C /config/worlds_local <mundo>'
-    docker exec <container> sha256sum /config/backups/<mundo>-before-clean-<timestamp>.tar.gz
+For an installation using the standard container paths, the world is under /config/worlds_local/<world-name>:
 
-Copie o backup para fora do host ou para armazenamento de retenção. Verifique se ele abre como tar e contém o diretório do mundo. Registre o SHA-256 no ticket de operação, nunca uma senha.
+    docker exec <container-name> sh -c 'mkdir -p /config/backups && tar -czf /config/backups/<world-name>-before-clean-<timestamp>.tar.gz -C /config/worlds_local <world-name>'
+    docker exec <container-name> sha256sum /config/backups/<world-name>-before-clean-<timestamp>.tar.gz
 
-O backup é o ponto de rollback. Não o apague até a validação final e um teste de entrada no jogo.
+Copy the archive outside the repository or to retention storage. Verify that it opens as a tar archive and contains the expected world directory. Record the SHA-256 in the operations ticket, never a password.
 
-## 3. Parar e instalar
+The backup is the rollback point. Keep it until final validation and an in-game login test are complete.
 
-    docker stop --timeout 120 <container>
-    docker cp artifacts/server-repair/CheatCleanup/CheatCleanup.dll <container>:/config/bepinex/plugins/CheatCleanup/CheatCleanup.dll
-    docker cp artifacts/server-repair/Jotunn/Jotunn.dll <container>:/config/bepinex/plugins/Jotunn/Jotunn.dll
+## 3. Stop and install
 
-Se a instalação usa bind mount, copie para o diretório correspondente no host com o container parado. Não use docker cp e cópia no host ao mesmo tempo sem conferir qual caminho é realmente persistente.
+    docker stop --timeout 120 <container-name>
+    docker cp artifacts/server-repair/CheatCleanup/CheatCleanup.dll <container-name>:/config/bepinex/plugins/CheatCleanup/CheatCleanup.dll
+    docker cp artifacts/server-repair/Jotunn/Jotunn.dll <container-name>:/config/bepinex/plugins/Jotunn/Jotunn.dll
 
-## 4. Iniciar e aguardar o carregamento
+If the installation uses a bind mount, copy to the corresponding host directory while the container is stopped. Do not use docker cp and host-side copying simultaneously without confirming which path is persistent.
 
-    docker start <container>
-    docker inspect --format '{{.State.Status}} {{.State.Running}}' <container>
+## 4. Start and wait for loading
 
-Aguarde o log indicar que os chunks e ZDOs terminaram de carregar. Em mundos grandes isso pode levar alguns minutos. Não mate o processo durante o save automático.
+    docker start <container-name>
+    docker inspect --format '{{.State.Status}} {{.State.Running}}' <container-name>
 
-## 5. Validar a limpeza
+Wait for the log to show that chunks and ZDOs have finished loading. Large worlds may take several minutes. Do not terminate the process during an automatic save.
 
-    docker exec <container> tail -n 400 /opt/valheim/bepinex/BepInEx/LogOutput.log
+## 5. Validate the cleanup
 
-Confira os dois relatórios mais recentes:
+    docker exec <container-name> tail -n 400 /opt/valheim/bepinex/BepInEx/LogOutput.log
 
-- AUTO-WORLD: quantos objetos foram encontrados e quantos foram enfileirados/limpos;
-- AUTO-WORLD-VERIFY: o resultado depois do save, que é a validação principal.
+Check the two most recent reports:
 
-O estado aprovado deve mostrar flags cheated=0, queued=0 e 0 marked nos contadores de itens. O servidor deve permanecer running true.
+- AUTO-WORLD: how many objects were scanned and how many were queued or cleaned;
+- AUTO-WORLD-VERIFY: the result after saving, which is the primary validation.
 
-Se houver contador diferente de zero:
+An approved result should show flags cheated=0, queued=0, and 0 marked in the item counters. The server should remain running true.
 
-1. não remova o backup;
-2. salve o trecho do log com o identificador do objeto e o nome do prefab;
-3. mantenha o servidor parado somente se houver evidência de falha de carregamento ou corrupção;
-4. faça uma nova cópia do estado atual antes de uma segunda tentativa;
-5. investigue a versão do jogo, do BepInEx e do plugin.
+If any counter is non-zero:
 
-Não declare sucesso baseado apenas no primeiro relatório: o segundo relatório precisa confirmar o estado persistido.
+1. keep the backup;
+2. save the log section containing the object identifier and prefab name;
+3. keep the server stopped only when there is evidence of a loading failure or corruption;
+4. create another copy of the current state before a second attempt;
+5. investigate the game, BepInEx, and plugin versions.
+
+Do not declare success based only on the first report. The second report must confirm the persisted state.
 
 ## 6. Rollback
 
-Se o servidor não iniciar ou o mundo não abrir corretamente, pare o container e restaure o diretório do mundo a partir do backup usando a ferramenta de restauração da instalação. Em uma instalação Docker simples, o padrão é extrair o tar em uma pasta temporária e substituir o diretório do mundo com o container parado, depois iniciar e validar novamente. Confirme o caminho absoluto antes de qualquer remoção ou substituição.
+If the server does not start or the world does not open correctly, stop the container and restore the world directory from the backup using the installation's restore procedure. For a simple Docker installation, the usual pattern is to extract the archive into a temporary directory and replace the world directory while the container is stopped, then start and validate again. Confirm absolute target paths before any removal or replacement.
 
-## 7. Diagnóstico comum
+## 7. Common diagnostics
 
-- FileNotFoundException para System.Private.CoreLib: o plugin foi compilado com referências do runtime errado. Recompile usando apenas as referências de assembly_valheim.dll e BepInEx compatíveis; não use tipos .NET do host como referência importada no patcher.
-- O relatório mostra zero, mas o jogo mostra itens marcados: confirme que a sessão abriu o mesmo mundo, que o plugin está no volume persistente e que o servidor foi reiniciado depois da cópia.
-- O relatório volta a mostrar flags após cada reinício: preserve os logs, faça outro backup e verifique se outro plugin está recriando a marcação ou se o jogo está carregando uma cópia diferente do mundo.
+- FileNotFoundException for System.Private.CoreLib: the plugin was built with references from the wrong runtime. Rebuild using only compatible assembly_valheim.dll and BepInEx references; do not import host .NET types into the patcher.
+- The report shows zero but the game still shows marked items: confirm that the session opened the same world, that the plugin is on the persistent volume, and that the server restarted after the copy.
+- The report shows flags again after every restart: preserve the logs, create another backup, and check whether another plugin is recreating the marker or the server is loading a different world copy.
